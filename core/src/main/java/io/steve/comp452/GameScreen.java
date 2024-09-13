@@ -52,14 +52,15 @@ public class GameScreen implements Screen {
         camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
         viewport = new FillViewport(camera.viewportWidth, camera.viewportHeight);
         stage = new Stage(viewport);
-        menu = new Table();
-        clickableActors = new Table();
-        menu.setFillParent(true);
-        menu.right();
-        clickableActors.setFillParent(true);
-        clickableActors.left();
 
+        initMap();
+        initMenu();
+        initClickableTiles();
 
+    }
+
+    //initialize map on start up
+    public void initMap(){
         map = new TiledMap();
         tiledMapTileLayerTerrain = new TiledMapTileLayer(ROW, COL,TILE_WIDTH, TILE_HEIGHT);
         tiledMapTileLayerAnt = new TiledMapTileLayer(ROW, COL,TILE_WIDTH, TILE_HEIGHT);
@@ -77,7 +78,13 @@ public class GameScreen implements Screen {
         }
 
         renderer = new OrthogonalTiledMapRenderer(map);
+    }
 
+    //initialize menu
+    public void initMenu(){
+        menu = new Table();
+        menu.setFillParent(true);
+        menu.right();
         TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
         textButtonStyle.font = new BitmapFont();
         textButtonStyle.fontColor = Color.BLACK;
@@ -139,12 +146,19 @@ public class GameScreen implements Screen {
 
         stage.addActor(menu);
 
+    }
+
+    public void initClickableTiles(){
+
+        clickableActors = new Table();
+        clickableActors.setFillParent(true);
+        clickableActors.left();
+
         for(int i  = 0; i < ROW; i++){
             for(int j  = 0; j < COL; j++){
                 Actor act = new Actor();
                 act.setBounds(i*TILE_WIDTH, j*TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
                 act.addListener(new ClickListener(){
-
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         changeTile(act.getX()/50, act.getY()/50);
@@ -180,8 +194,7 @@ public class GameScreen implements Screen {
         renderer.setView(camera);
         renderer.render();
         stage.draw();
-
-
+        
     }
 
     @Override
