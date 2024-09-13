@@ -16,6 +16,7 @@ import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -41,9 +42,13 @@ public class GameScreen implements Screen {
     final int COL = 16;
 
     Table menu;
-    Button openTerrain, grassTerrain, swampTerrain, obstacle, start, restart;
+    Button openTerrain, grassTerrain, swampTerrain, obstacle, start, restart, startGoal, endGoal;
     Table clickableActors;
 
+    boolean grassBool, swampBool, obstacleBool, openTerrainBool, startGoalBool, endGoalBool;
+
+    int [][] graph;
+    int startX, startY, endX, endY;
 
     GameScreen(Game game){
         this.game = game;
@@ -53,9 +58,13 @@ public class GameScreen implements Screen {
         viewport = new FillViewport(camera.viewportWidth, camera.viewportHeight);
         stage = new Stage(viewport);
 
+        grassBool = swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = false;
+        graph = new int[ROW][COL];
+
         initMap();
         initMenu();
         initClickableTiles();
+        initGraph();
 
     }
 
@@ -99,6 +108,7 @@ public class GameScreen implements Screen {
                 changeTerrainType(openTerrain);
             }
         });
+
         grassTerrain = new TextButton("Grass Terrain", textButtonStyle);
         grassTerrain.setName("Grass");
         grassTerrain.addListener(new ClickListener(Input.Buttons.LEFT){
@@ -109,6 +119,7 @@ public class GameScreen implements Screen {
                 changeTerrainType(grassTerrain);
             }
         });
+
         swampTerrain = new TextButton("Swamp Terrain", textButtonStyle);
         swampTerrain.setName("Swamp");
         swampTerrain.addListener(new ClickListener(Input.Buttons.LEFT){
@@ -119,6 +130,7 @@ public class GameScreen implements Screen {
                 changeTerrainType(swampTerrain);
             }
         });
+
         obstacle = new TextButton("Obstacle Terrain", textButtonStyle);
         obstacle.setName("Obstacle");
         obstacle.addListener(new ClickListener(Input.Buttons.LEFT){
@@ -129,9 +141,49 @@ public class GameScreen implements Screen {
                 changeTerrainType(obstacle);
             }
         });
+
+        startGoal = new TextButton("Start Goal", textButtonStyle);
+        startGoal.setName("StartG");
+        startGoal.addListener(new ClickListener(Input.Buttons.LEFT){
+
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                super.clicked(event, x, y);
+                changeTerrainType(startGoal);
+            }
+        });
+
+        endGoal = new TextButton("End Goal", textButtonStyle);
+        endGoal.setName("End");
+        endGoal.addListener(new ClickListener(Input.Buttons.LEFT){
+
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                super.clicked(event, x, y);
+                changeTerrainType(endGoal);
+            }
+        });
+
         start = new TextButton("START", textButtonStyle);
         restart =  new TextButton("restart", textButtonStyle);
+        restart.setName("Restart");
+        restart.addListener(new ClickListener(Input.Buttons.LEFT){
 
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                super.clicked(event, x, y);
+                grassBool = swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = false;
+                initMap();
+                initGraph();
+                startGoal.setTouchable(Touchable.enabled);
+                endGoal.setTouchable(Touchable.enabled);
+            }
+        });
+
+        menu.add(startGoal).padRight(50f).padBottom(25f);
+        menu.row();
+        menu.add(endGoal).padRight(50f).padBottom(25f);
+        menu.row();
         menu.add(openTerrain).padRight(50f).padBottom(25f);
         menu.row();
         menu.add(grassTerrain).padRight(50f).padBottom(25f);
@@ -173,13 +225,100 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
     }
 
+    public void initGraph(){
+
+        for(int i  = 0; i < ROW; i++){
+            for(int j  = 0; j < COL; j++){
+                graph[i][j] = 1;
+            }
+        }
+    }
+
    public void  changeTile(float x, float y){
-            Gdx.app.log("", String.valueOf(x) + " " + String.valueOf(y));
+        Gdx.app.log("", String.valueOf(x) + " " + String.valueOf(y));
+        if(grassBool){
+            Texture landTexture = new Texture(Gdx.files.internal("grass.png"));
+            TextureRegion landTextureReg = new TextureRegion(landTexture);
+            StaticTiledMapTile myTile = new StaticTiledMapTile(landTextureReg);
+            TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
+            cell.setTile(myTile);
+            tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+        }
+       else if(swampBool){
+           Texture landTexture = new Texture(Gdx.files.internal("swamp.png"));
+           TextureRegion landTextureReg = new TextureRegion(landTexture);
+           StaticTiledMapTile myTile = new StaticTiledMapTile(landTextureReg);
+           TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
+           cell.setTile(myTile);
+           tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+       }
+       else if(obstacleBool){
+           Texture landTexture = new Texture(Gdx.files.internal("rock.png"));
+           TextureRegion landTextureReg = new TextureRegion(landTexture);
+           StaticTiledMapTile myTile = new StaticTiledMapTile(landTextureReg);
+           TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
+           cell.setTile(myTile);
+           tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+       }
+        else if(openTerrainBool){
+            Texture landTexture = new Texture(Gdx.files.internal("dirt.png"));
+            TextureRegion landTextureReg = new TextureRegion(landTexture);
+            StaticTiledMapTile myTile = new StaticTiledMapTile(landTextureReg);
+            TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
+            cell.setTile(myTile);
+            tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+        }
+        else if(startGoalBool){
+            Texture landTexture = new Texture(Gdx.files.internal("start.png"));
+            TextureRegion landTextureReg = new TextureRegion(landTexture);
+            StaticTiledMapTile myTile = new StaticTiledMapTile(landTextureReg);
+            TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
+            cell.setTile(myTile);
+            tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+            startGoalBool = false;
+        }
+        else if(endGoalBool){
+            Texture landTexture = new Texture(Gdx.files.internal("goal.png"));
+            TextureRegion landTextureReg = new TextureRegion(landTexture);
+            StaticTiledMapTile myTile = new StaticTiledMapTile(landTextureReg);
+            TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
+            cell.setTile(myTile);
+            tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+            endGoalBool = false;
+        }
     }
 
     public void changeTerrainType(Button button){
-            String s = button.getName();
-            Gdx.app.log("", s);
+        String s = button.getName();
+        Gdx.app.log("", s);
+
+        if(s.equals("Grass")){
+            grassBool = true;
+            swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = false;
+        }
+        else if(s.equals("Swamp")){
+            swampBool = true;
+            grassBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = false;
+        }
+        else if(s.equals("Obstacle")){
+            obstacleBool = true;
+            swampBool = grassBool = openTerrainBool = startGoalBool = endGoalBool = false;
+        }
+        else if(s.equals("Open")){
+            openTerrainBool = true;
+            swampBool = obstacleBool = grassBool = startGoalBool = endGoalBool = false;
+        }
+        else if(s.equals("StartG")){
+            startGoalBool = true;
+            swampBool = obstacleBool = grassBool = openTerrainBool = endGoalBool = false;
+            startGoal.setTouchable(Touchable.disabled);
+        }
+        else if(s.equals("End")){
+            endGoalBool = true;
+            swampBool = obstacleBool = grassBool = openTerrainBool = startGoalBool = false;
+            endGoal.setTouchable(Touchable.disabled);
+        }
+
     }
 
     @Override
@@ -194,7 +333,6 @@ public class GameScreen implements Screen {
         renderer.setView(camera);
         renderer.render();
         stage.draw();
-        
     }
 
     @Override
