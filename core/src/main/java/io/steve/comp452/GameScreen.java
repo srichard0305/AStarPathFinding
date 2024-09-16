@@ -8,11 +8,15 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -24,6 +28,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import java.util.ArrayList;
 
 
 public class GameScreen implements Screen {
@@ -45,10 +51,15 @@ public class GameScreen implements Screen {
     Button openTerrain, grassTerrain, swampTerrain, obstacle, start, restart, startGoal, endGoal;
     Table clickableActors;
 
-    boolean grassBool, swampBool, obstacleBool, openTerrainBool, startGoalBool, endGoalBool;
+    boolean grassBool, swampBool, obstacleBool, openTerrainBool, startGoalBool, endGoalBool, antRunning;
 
     int [][] graph;
-    int startX, startY, endX, endY;
+    Node startNode, endNode;
+    ArrayList<Node> path;
+
+    SpriteBatch spriteBatch;
+    ShapeRenderer shapeRenderer;
+    Ant ant;
 
     GameScreen(Game game){
         this.game = game;
@@ -58,8 +69,14 @@ public class GameScreen implements Screen {
         viewport = new FillViewport(camera.viewportWidth, camera.viewportHeight);
         stage = new Stage(viewport);
 
-        grassBool = swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = false;
+        grassBool = swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = antRunning = false;
         graph = new int[ROW][COL];
+
+        path = new ArrayList<>();
+
+        shapeRenderer= new ShapeRenderer();
+        spriteBatch = new SpriteBatch();
+
 
         initMap();
         initMenu();
@@ -165,6 +182,15 @@ public class GameScreen implements Screen {
         });
 
         start = new TextButton("START", textButtonStyle);
+        start.setName("Start");
+        start.addListener(new ClickListener(Input.Buttons.LEFT){
+
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                super.clicked(event, x, y);
+                startAnt();
+            }
+        });
         restart =  new TextButton("restart", textButtonStyle);
         restart.setName("Restart");
         restart.addListener(new ClickListener(Input.Buttons.LEFT){
@@ -172,7 +198,7 @@ public class GameScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 super.clicked(event, x, y);
-                grassBool = swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = false;
+                grassBool = swampBool = obstacleBool = openTerrainBool = startGoalBool = endGoalBool = antRunning = false;
                 initMap();
                 initGraph();
                 startGoal.setTouchable(Touchable.enabled);
@@ -229,13 +255,13 @@ public class GameScreen implements Screen {
 
         for(int i  = 0; i < ROW; i++){
             for(int j  = 0; j < COL; j++){
-                graph[i][j] = 1;
+                graph[i][j] = 25555;
             }
         }
     }
 
    public void  changeTile(float x, float y){
-        Gdx.app.log("", String.valueOf(x) + " " + String.valueOf(y));
+
         if(grassBool){
             Texture landTexture = new Texture(Gdx.files.internal("grass.png"));
             TextureRegion landTextureReg = new TextureRegion(landTexture);
@@ -243,6 +269,7 @@ public class GameScreen implements Screen {
             TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
             cell.setTile(myTile);
             tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+            graph[(int)x][(int)y] = 3;
         }
        else if(swampBool){
            Texture landTexture = new Texture(Gdx.files.internal("swamp.png"));
@@ -251,6 +278,7 @@ public class GameScreen implements Screen {
            TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
            cell.setTile(myTile);
            tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+           graph[(int)x][(int)y] = 4;
        }
        else if(obstacleBool){
            Texture landTexture = new Texture(Gdx.files.internal("rock.png"));
@@ -259,6 +287,7 @@ public class GameScreen implements Screen {
            TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
            cell.setTile(myTile);
            tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+            graph[(int)x][(int)y] = Integer.MAX_VALUE;
        }
         else if(openTerrainBool){
             Texture landTexture = new Texture(Gdx.files.internal("dirt.png"));
@@ -267,6 +296,7 @@ public class GameScreen implements Screen {
             TiledMapTileLayer.Cell cell = new TiledMapTileLayer.Cell();
             cell.setTile(myTile);
             tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
+            graph[(int)x][(int)y] = 1;
         }
         else if(startGoalBool){
             Texture landTexture = new Texture(Gdx.files.internal("start.png"));
@@ -276,6 +306,7 @@ public class GameScreen implements Screen {
             cell.setTile(myTile);
             tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
             startGoalBool = false;
+            startNode = new Node((int)x,(int)y);
         }
         else if(endGoalBool){
             Texture landTexture = new Texture(Gdx.files.internal("goal.png"));
@@ -285,12 +316,12 @@ public class GameScreen implements Screen {
             cell.setTile(myTile);
             tiledMapTileLayerTerrain.setCell((int)x, (int)y, cell);
             endGoalBool = false;
+            endNode = new Node((int)x,(int)y);
         }
     }
 
     public void changeTerrainType(Button button){
         String s = button.getName();
-        Gdx.app.log("", s);
 
         if(s.equals("Grass")){
             grassBool = true;
@@ -321,6 +352,17 @@ public class GameScreen implements Screen {
 
     }
 
+    public void startAnt(){
+
+        AStarAlgo aStarSearch = new AStarAlgo(graph, startNode, endNode);
+        path = aStarSearch.findPath();
+        if(path.isEmpty())
+            return;
+        path.add(endNode);
+        ant = new Ant(path);
+        antRunning = true;
+    }
+
     @Override
     public void show() {
 
@@ -333,6 +375,24 @@ public class GameScreen implements Screen {
         renderer.setView(camera);
         renderer.render();
         stage.draw();
+        if(antRunning) {
+            spriteBatch.begin();
+                ant.draw(spriteBatch);
+            spriteBatch.end();
+
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(Color.BLUE);
+            for (int i = 1; i < path.size() - 1; i++) {
+                shapeRenderer.line(convertLineCoordinates(path.get(i - 1).getX()), convertLineCoordinates(path.get(i - 1).getY()),
+                    convertLineCoordinates(path.get(i).getX()), convertLineCoordinates(path.get(i).getY()));
+            }
+            shapeRenderer.end();
+        }
+    }
+
+    public int convertLineCoordinates(int x){
+        return (x * 50) + 25;
     }
 
     @Override
