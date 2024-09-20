@@ -31,3 +31,10 @@ Useful Gradle tasks and flags:
 
 Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
 For example, `core:clean` removes `build` folder only from the `core` project.
+
+## A* PathFinding 
+
+This program was created to showcase the classic A* pathfind algorithm found in video game AI. The user selects the start and end goals for the ant character.
+The user also places the type of terrian for the ant to cross over. There is open terrian, grass, swap, and obstacle, each with a different cost value. 
+
+![screenshot](https://github.com/srichard0305/AStarPathFinding/blob/main/screenshot.PNG?raw=true "screenshot")
