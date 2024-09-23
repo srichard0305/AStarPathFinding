@@ -34,7 +34,11 @@ For example, `core:clean` removes `build` folder only from the `core` project.
 
 ## A* PathFinding 
 
-This program was created to showcase the classic A* pathfind algorithm found in video game AI. The user selects the start and end goals for the ant character.
-The user also places the type of terrian for the ant to cross over. There is open terrian, grass, swap, and obstacle, each with a different cost value. 
+This program was created to showcase the classic A* pathfinding algorithm. The user selects the start and end goals for the ant character, as well as placing all the 
+terrian on the 16x16 grid. There are 4 types of terrian open, grass, swap, and obstacle, each with their own cost value.
 
 ![screenshot](https://github.com/srichard0305/AStarPathFinding/blob/main/screenshot.PNG?raw=true "screenshot")
+
+## Install
+Download the jar file in the lib folder and run.
+Need a JRE to run this jar file. 
